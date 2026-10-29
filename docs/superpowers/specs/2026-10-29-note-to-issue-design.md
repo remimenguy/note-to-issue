@@ -34,3 +34,6 @@
 - Lecture groupée des identifiants et dates de modification ; seuls les textes nouveaux/modifiés sont récupérés.
 - Un seul scan à la fois, un seul appel IA à la fois, au maximum 10 notes par scan, intervalle configurable à partir de 60 secondes.
 - Au repos : timer suspendu entre les passages. Les analyses négatives et aperçus ne sont pas recalculés sans modification. Les erreurs sont visibles et ne provoquent pas de boucle active.
+- Fonctionnement continu via menu de barre des menus, même fenêtre fermée. Installation du bundle dans `~/Applications` pour ne pas dépendre du montage du disque externe.
+- Démarrage à l'ouverture de session via `SMAppService.mainApp`. Activation macOS signalée si approbation système requise. Surveillance reprise automatiquement lorsque la clé est configurée ; pause persistante.
+- En veille/arrêt aucune activité, reprise au réveil/ouverture de session. Aucun maintien artificiel du Mac éveillé.

@@ -1,0 +1,17 @@
+.DS_Store
+.build/
+.swiftpm/
+dist/
+.superpowers/
+work/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.log
+state.json
+*.sqlite*
+credentials*
+secrets*
