@@ -11,6 +11,7 @@ let package = Package(
     targets: [
         .target(name: "NoteToIssueCore", resources: [.copy("Resources")]),
         .executableTarget(name: "NoteToIssue", dependencies: ["NoteToIssueCore"]),
-        .testTarget(name: "NoteToIssueCoreTests", dependencies: ["NoteToIssueCore"])
+        .testTarget(name: "NoteToIssueCoreTests", dependencies: ["NoteToIssueCore"]),
+        .testTarget(name: "NoteToIssueAppTests", dependencies: ["NoteToIssue"])
     ]
 )

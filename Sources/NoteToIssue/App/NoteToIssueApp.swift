@@ -10,10 +10,9 @@ struct NoteToIssueApp: App {
     init() { umask(0o077) }
 
     var body: some Scene {
-        WindowGroup("Note to Issue", id: "main") {
+        Window("Note to Issue", id: "main") {
             ContentView(model: model)
                 .frame(minWidth: 900, minHeight: 600)
-                .task { await model.boot() }
         }
         .defaultSize(width: 1100, height: 730)
         .commands {
@@ -32,8 +31,7 @@ struct NoteToIssueApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.setActivationPolicy(.accessory)
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }

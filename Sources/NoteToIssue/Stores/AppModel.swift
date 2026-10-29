@@ -17,7 +17,7 @@ final class AppModel: ObservableObject {
     @Published var lastScan: Date?
     @Published var selection: String?
     @Published var filter: EntryStatus?
-    let demo = ProcessInfo.processInfo.arguments.contains("--demo")
+    let demo: Bool
     private let settingsStore = SettingsStore()
     private let notes: NotesReading = NotesClient()
     private var processor: Processor?
@@ -27,6 +27,12 @@ final class AppModel: ObservableObject {
     private var key = ""
     private var oauthServer: OAuthCallbackServer?
     private var oauthTask: Task<Void, Never>?
+
+    init(demo: Bool = ProcessInfo.processInfo.arguments.contains("--demo")) {
+        self.demo = demo
+        // Monitoring must start even when no window or menu has been opened.
+        Task { await self.boot() }
+    }
 
     var visibleEntries: [Entry] { entries.filter { filter == nil || $0.status == filter } }
     var selected: Entry? { entries.first { $0.id == selection } }

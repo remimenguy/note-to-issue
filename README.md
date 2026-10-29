@@ -25,7 +25,7 @@ flowchart LR
 - Utilise `kroco-edu/app` par défaut, configurable dans les réglages.
 - Une directive dans la note permet de choisir un autre dépôt.
 - Conserve la note originale et affiche les propositions, résultats et erreurs dans l'app.
-- Reste active dans la barre des menus quand la fenêtre est fermée et peut se relancer à l'ouverture de session.
+- Tourne en arrière-plan dans la barre des menus, sans icône dans le Dock, et peut se relancer à l'ouverture de session.
 
 ## Installation
 
@@ -46,7 +46,7 @@ Le script construit et installe `~/Applications/NoteToIssue.app`, puis l'ouvre. 
 
 ### Première connexion
 
-1. Ouvre **Réglages → OpenRouter → Connecter OpenRouter**.
+1. Clique l'icône de note dans la barre des menus, puis **Réglages → OpenRouter → Connecter OpenRouter**.
 2. Autorise la connexion dans ton navigateur. L'app utilise OAuth PKCE S256 : aucun secret client à configurer, aucune clé à copier. Le retour local se ferme après la connexion ou au bout de 3 minutes.
 3. Vérifie le compte Notes (`iCloud` par défaut) et, éventuellement, limite la surveillance à un dossier. Un compte renommé commençant par « iCloud » est reconnu automatiquement s'il est unique ; sinon, saisis son nom exact dans Apple Notes.
 4. Clique **Vérifier l'accès à Notes** et autorise l'automatisation macOS.
@@ -85,7 +85,7 @@ La surveillance vérifie les identifiants et dates de modification toutes les 60
 - Aucun appel OpenRouter automatique pour une note déjà analysée. La réanalyse se demande explicitement dans l'app.
 - Intervalle réglable à 1, 5, 15 ou 60 minutes ; 5 minutes réduit encore les réveils.
 - Une pause est conservée au redémarrage.
-- Fermer la fenêtre garde l'app active. **Quitter** l'arrête.
+- L'app démarre en arrière-plan, sans icône dans le Dock. La fenêtre s'ouvre depuis l'icône de la barre des menus → **Ouvrir Note to Issue**. La fermer garde l'app active ; **Quitter** l'arrête.
 - Le lancement automatique utilise les éléments d'ouverture natifs de macOS. S'il faut une approbation, active Note to Issue dans **Réglages Système → Général → Ouverture et extensions**.
 - Le Mac doit être allumé et la session ouverte. Pendant la veille, aucun traitement ne s'exécute ; il reprend au réveil. L'app ne maintient pas le Mac éveillé.
 

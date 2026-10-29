@@ -38,6 +38,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
 <key>CFBundleVersion</key><string>1</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
+<key>LSUIElement</key><true/>
 <key>NSAppleEventsUsageDescription</key><string>Note to Issue lit les notes du compte choisi pour préparer des issues GitHub.</string>
 </dict></plist>
 PLIST
@@ -55,6 +56,7 @@ case "$MODE" in
     /usr/bin/open "$APP_BUNDLE"
     sleep 2
     pgrep -x "$APP_NAME" >/dev/null
+    swift "$ROOT_DIR/script/verify_background.swift" "$APP_BUNDLE"
     echo "Note to Issue est démarrée."
     ;;
 esac
