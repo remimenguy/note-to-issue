@@ -105,4 +105,12 @@ final class ServiceTests: XCTestCase {
             XCTFail("Timeout not enforced")
         } catch {}
     }
+
+    func testManualReanalysisReadsOnlyTheRequestedFreshNote() async throws {
+        let runner = CommandStub([#"[{"id":"id","title":"Bug","text":"updated text","modifiedAt":2,"folder":"Dev"}]"#])
+        let fresh = try await NotesClient(runner: runner).readOne(id: "id", settings: Settings())
+        XCTAssertEqual(fresh.text, "updated text")
+        let config = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(runner.calls[0].1.last!.utf8)) as? [String: Any])
+        XCTAssertEqual(config["onlyID"] as? String, "id")
+    }
 }

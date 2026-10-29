@@ -146,7 +146,7 @@ final class AppModel: ObservableObject {
 
     func scan() async {
         guard !demo, !busy, keyConfigured, let processor else { return }
-        busy = true; error = nil; message = "Recherche de notes nouvelles ou modifiées…"
+        busy = true; error = nil; message = "Recherche de nouvelles notes…"
         defer { busy = false }
         let snapshot = settings
         do {
@@ -176,7 +176,10 @@ final class AppModel: ObservableObject {
         await action { try await self.processor?.reconcile(id: entry.id) }
     }
     func retry(_ entry: Entry) async {
-        await action { try await self.processor?.process(note: entry.note, settings: self.settings, key: self.key, force: true) }
+        await action {
+            let fresh = try await self.notes.readOne(id: entry.id, settings: self.settings)
+            return try await self.processor?.process(note: fresh, settings: self.settings, key: self.key, force: true)
+        }
     }
     private func action(_ operation: () async throws -> Entry?) async {
         guard !demo, !busy, processor != nil else { return }

@@ -12,7 +12,7 @@ SwiftUI · macOS 14+ · aucune dépendance Swift externe · aucun serveur à hé
 
 ```mermaid
 flowchart LR
-    A[Notes iCloud] --> B[Notes nouvelles ou modifiées]
+    A[Notes iCloud] --> B[Nouvelles notes seulement]
     B --> C[OpenRouter]
     C --> D{Demande exploitable ?}
     D -->|Oui, confiance ≥ 90 %| E[Issue GitHub + labels]
@@ -79,10 +79,10 @@ Une note produit au maximum une issue. Pour une nouvelle demande après publicat
 
 ## Automatisation et ressources
 
-La surveillance vérifie les identifiants et dates de modification toutes les 60 secondes par défaut. Seul le texte des notes nouvelles ou modifiées est récupéré. Un lot contient au maximum 10 notes, traitées une par une. Les notes encore modifiées depuis moins de 30 secondes attendent le passage suivant.
+La surveillance vérifie les identifiants et dates de modification toutes les 60 secondes par défaut. Seul le texte des notes jamais traitées est récupéré. Une note déjà traitée ne déclenche plus d'appel IA, même si elle est modifiée ensuite. Un lot contient au maximum 10 notes, traitées une par une. Les notes encore modifiées depuis moins de 30 secondes attendent le passage suivant.
 
 - Aucun modèle IA local, navigateur intégré, conteneur ou serveur permanent.
-- Aucun appel OpenRouter pour une note déjà analysée et inchangée.
+- Aucun appel OpenRouter automatique pour une note déjà analysée. La réanalyse se demande explicitement dans l'app.
 - Intervalle réglable à 1, 5, 15 ou 60 minutes ; 5 minutes réduit encore les réveils.
 - Une pause est conservée au redémarrage.
 - Fermer la fenêtre garde l'app active. **Quitter** l'arrête.

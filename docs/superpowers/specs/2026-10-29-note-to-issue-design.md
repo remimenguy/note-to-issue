@@ -39,3 +39,4 @@
 - En veille/arrêt aucune activité, reprise au réveil/ouverture de session. Aucun maintien artificiel du Mac éveillé.
 - Modèle OpenRouter par défaut : `openrouter/free` (demande utilisateur).
 - Les notes de Recently Deleted / Supprimées récemment sont exclues avant lecture du texte, même avec un filtre de dossier explicite. Compte iCloud renommé : résolution uniquement si un unique compte au nom commençant par iCloud est trouvé.
+- Demande finale : les analyses automatiques concernent uniquement les identifiants de notes jamais traités ; les éditions de notes déjà traitées n'entraînent plus de lecture du texte ni de requête IA. Réanalyse uniquement sur demande explicite.

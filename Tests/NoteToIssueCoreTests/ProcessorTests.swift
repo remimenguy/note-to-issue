@@ -128,8 +128,15 @@ final class ProcessorTests: XCTestCase {
         let formatted = Note(id: note.id, title: note.title, text: note.text, modifiedAt: 200)
         _ = try await processor.process(note: formatted, settings: settings, key: "test", now: Date(timeIntervalSince1970: 300))
         let known = await processor.known
-        XCTAssertEqual(known[note.id], 200)
+        XCTAssertEqual(known[note.id], -1)
         XCTAssertEqual(try journal.load()[note.id]?.note.modifiedAt, 200)
         XCTAssertEqual(analyzer.calls, 1)
+    }
+
+    func testPreviouslyProcessedNoteIsExcludedFromAutomaticReads() async throws {
+        var settings = Settings(); settings.automatic = false
+        _ = try await processor.process(note: note, settings: settings, key: "test", now: Date(timeIntervalSince1970: 200))
+        let known = await processor.known
+        XCTAssertEqual(known, ["one": -1])
     }
 }

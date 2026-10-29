@@ -21,9 +21,9 @@ public actor Processor {
     }
 
     public var known: [String: Double] {
-        entries.mapValues { entry in
-            [.published, .publishing, .uncertain].contains(entry.status) ? -1 : entry.note.modifiedAt
-        }
+        // -1 tells Notes to skip this identifier regardless of later edits.
+        // Re-analysis is an explicit user action, never another background AI call.
+        entries.mapValues { _ in -1 }
     }
 
     private func begin() throws {

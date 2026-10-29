@@ -39,8 +39,8 @@ struct EntryDetailView: View {
                     if entry.status == .uncertain {
                         Button("Vérifier GitHub") { Task { await model.reconcile(entry) } }.buttonStyle(.borderedProminent)
                     }
-                    if entry.status == .failed {
-                        Button("Réessayer l'analyse") { Task { await model.retry(entry) } }.buttonStyle(.bordered)
+                    if [.failed, .ignored, .review].contains(entry.status) {
+                        Button("Réanalyser la note") { Task { await model.retry(entry) } }.buttonStyle(.bordered)
                     }
                 }.disabled(model.busy || model.demo)
                 Divider()

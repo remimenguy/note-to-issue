@@ -25,6 +25,7 @@ function run(argv) {
     var dates = source.modificationDate();
     var candidates = [];
     for (var i = 0; i < ids.length; i++) {
+        if (config.onlyID && ids[i] !== config.onlyID) continue;
         var modified = new Date(dates[i]).getTime() / 1000;
         if (!isFinite(modified) || Date.now() / 1000 - modified < 30) continue;
         if (config.known[ids[i]] === modified || config.known[ids[i]] === -1) continue;
