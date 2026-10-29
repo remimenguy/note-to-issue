@@ -46,6 +46,12 @@ public struct ProcessRunner: CommandRunning {
             guard process.terminationStatus == 0 else {
                 let name = URL(fileURLWithPath: executable).lastPathComponent
                 if name == "osascript" {
+                    if String(decoding: data, as: UTF8.self).contains("Notes account not found") {
+                        throw AppError.message("Compte Notes introuvable. Dans les réglages, utilise le nom exact du compte affiché dans Apple Notes.")
+                    }
+                    if String(decoding: data, as: UTF8.self).contains("Notes folder not found") {
+                        throw AppError.message("Dossier Notes introuvable ou ambigu. Vérifie son nom exact, ou laisse le filtre vide.")
+                    }
                     throw AppError.message("Accès Notes impossible. Vérifie le compte, les dossiers et Réglages Système → Confidentialité et sécurité → Automatisation → Note to Issue → Notes.")
                 }
                 throw AppError.message("\(name) a échoué ou dépassé le délai. Vérifie la connexion et les droits GitHub avec gh auth status.")

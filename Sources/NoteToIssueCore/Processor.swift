@@ -44,7 +44,15 @@ public actor Processor {
         guard note.modifiedAt.isFinite, now.timeIntervalSince1970 - note.modifiedAt >= 30 else { return nil }
         if let existing = entries[note.id] {
             if [.published, .publishing, .uncertain].contains(existing.status) { return existing }
-            if !force && existing.note.fingerprint == note.fingerprint { return existing }
+            if !force && existing.note.fingerprint == note.fingerprint {
+                if existing.note != note {
+                    var updated = existing
+                    updated.note = note
+                    try persist(updated)
+                    return updated
+                }
+                return existing
+            }
         }
         var entry = Entry(note: note, repository: settings.defaultRepository, status: .review)
         do {

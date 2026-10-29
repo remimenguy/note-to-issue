@@ -1,0 +1,17 @@
+name: macOS
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: swift test
+      - name: Package app
+        run: ./script/build_and_run.sh --build-only
+      - name: Validate bundle signature
+        run: codesign --verify --deep --strict dist/NoteToIssue.app

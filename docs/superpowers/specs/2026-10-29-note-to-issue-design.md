@@ -12,7 +12,7 @@
 - Compte `iCloud` par défaut, filtre de dossier facultatif. Texte seulement ; notes verrouillées ignorées, pas d'OCR ni de pièces jointes.
 - Un bouton démarre la surveillance toutes les 60 secondes tant que l'app est ouverte. Le mode de publication est automatique par défaut ; un mode aperçu reste disponible.
 - Stabilisation de 30 secondes après la dernière modification pour éviter de publier une note en cours d'écriture.
-- Clé OpenRouter enregistrée uniquement dans le Trousseau. Authentification GitHub via la session locale `gh` existante. Aucun token dans les arguments ou fichiers du dépôt.
+- Connexion OpenRouter OAuth PKCE S256 avec retour temporaire sur 127.0.0.1, état aléatoire vérifié ; secret obtenu enregistré uniquement dans le Trousseau. Authentification GitHub via la session locale `gh` existante. Aucun token dans les arguments ou fichiers du dépôt.
 - Modèle OpenRouter configurable, réponse JSON Schema et validation locale ; aucune commande générée par l'IA n'est exécutée. L'IA reçoit uniquement le texte de la note, le dépôt choisi et ses labels existants.
 - Notes personnelles, listes de courses, journaux et demandes vagues sont ignorés. Les détections sous 0,90 de confiance restent en aperçu.
 - Routage déterministe : `repo: owner/name`, `repository: owner/name`, `dépôt: owner/name`, ou une instruction comme `dans le repo owner/name` / `create issue in owner/name`. Une simple référence à un autre dépôt ne change pas la destination. Directives conflictuelles ou mal formées : erreur, aucune publication.

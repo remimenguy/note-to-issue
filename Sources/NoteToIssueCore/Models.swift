@@ -60,7 +60,7 @@ public struct Settings: Codable, Equatable, Sendable {
     public var account = "iCloud"
     public var folder = ""
     public var defaultRepository = "kroco-edu/app"
-    public var model = "openai/gpt-4.1-mini"
+    public var model = "openrouter/free"
     public var automatic = true
     public var interval: Double = 60
     public var launchAtLogin = true

@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:note-to-issue}",
+            "name": "Debug NoteToIssue",
+            "target": "NoteToIssue",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug NoteToIssue"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:note-to-issue}",
+            "name": "Release NoteToIssue",
+            "target": "NoteToIssue",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release NoteToIssue"
+        }
+    ]
+}
