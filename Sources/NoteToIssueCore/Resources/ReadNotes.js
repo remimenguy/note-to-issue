@@ -31,7 +31,13 @@ function run(argv) {
         if (config.known[ids[i]] === modified || config.known[ids[i]] === -1) continue;
         candidates.push({ id: ids[i], modifiedAt: modified });
     }
-    candidates.sort(function (a, b) { return b.modifiedAt - a.modifiedAt; });
+    var priorityIDs = config.priorityIDs || [];
+    candidates.sort(function (a, b) {
+        var first = priorityIDs.indexOf(a.id), second = priorityIDs.indexOf(b.id);
+        first = first < 0 ? priorityIDs.length : first;
+        second = second < 0 ? priorityIDs.length : second;
+        return first - second || b.modifiedAt - a.modifiedAt;
+    });
     var result = [];
     for (var j = 0; j < candidates.length && result.length < config.limit; j++) {
         var metadata = candidates[j];

@@ -1,14 +1,19 @@
 import Foundation
 
 public protocol NotesReading {
-    func read(settings: Settings, known: [String: Double]) async throws -> [Note]
+    func read(settings: Settings, known: [String: Double], priorityIDs: [String]) async throws -> [Note]
     func readOne(id: String, settings: Settings) async throws -> Note
+}
+public extension NotesReading {
+    func read(settings: Settings, known: [String: Double]) async throws -> [Note] {
+        try await read(settings: settings, known: known, priorityIDs: [])
+    }
 }
 public struct NotesClient: NotesReading {
     private let runner: CommandRunning
     public init(runner: CommandRunning = ProcessRunner()) { self.runner = runner }
-    public func read(settings: Settings, known: [String: Double]) async throws -> [Note] {
-        try await read(settings: settings, known: known, onlyID: nil)
+    public func read(settings: Settings, known: [String: Double], priorityIDs: [String]) async throws -> [Note] {
+        try await read(settings: settings, known: known, onlyID: nil, priorityIDs: priorityIDs)
     }
     public func readOne(id: String, settings: Settings) async throws -> Note {
         guard let note = try await read(settings: settings, known: [:], onlyID: id).first, note.id == id else {
@@ -16,7 +21,7 @@ public struct NotesClient: NotesReading {
         }
         return note
     }
-    private func read(settings: Settings, known: [String: Double], onlyID: String?) async throws -> [Note] {
+    private func read(settings: Settings, known: [String: Double], onlyID: String?, priorityIDs: [String] = []) async throws -> [Note] {
         try settings.validate()
         let packaged = Bundle.main.resourceURL?.appendingPathComponent("Notes/ReadNotes.js")
         let scriptURL = packaged.flatMap { FileManager.default.fileExists(atPath: $0.path) ? $0 : nil }
@@ -26,6 +31,7 @@ public struct NotesClient: NotesReading {
         }
         var payload: [String: Any] = ["account": settings.account, "folder": settings.folder, "known": known, "limit": 10]
         if let onlyID { payload["onlyID"] = onlyID }
+        if !priorityIDs.isEmpty { payload["priorityIDs"] = priorityIDs }
         let config = try JSONSerialization.data(withJSONObject: payload)
         let data = try await runner.run(executable: "/usr/bin/osascript", arguments: ["-l", "JavaScript", script.path, String(decoding: config, as: UTF8.self)], input: nil, timeout: 60)
         return try JSONDecoder().decode([Note].self, from: data)

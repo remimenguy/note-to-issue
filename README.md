@@ -91,6 +91,16 @@ La surveillance vérifie les identifiants et dates de modification toutes les 60
 
 Le mode **aperçu**, dans les réglages, désactive la publication automatique. Les détections sous 90 % de confiance restent en attente de validation, y compris en mode automatique.
 
+### Quotas des modèles gratuits
+
+Avec `openrouter/free` ou un modèle `:free`, les analyses sont espacées d'au moins **5 secondes**. L'app consulte le quota journalier communiqué par OpenRouter via `/api/v1/key`, avec un cache de cinq minutes. Ce contrôle utilise les limites de ton compte, sans supposer que tous les comptes ont le même plafond.
+
+Une réponse **429** arrête le lot. La note passe en **En attente**, avec une date de reprise enregistrée dans le journal. L'app respecte `Retry-After` et `X-RateLimit-Reset` lorsqu'ils sont présents ; sinon elle applique un délai progressif de 1, 2, 4 minutes, jusqu'à une heure. Un quota journalier épuisé attend le renouvellement du jour UTC. La surveillance dort pendant ce délai, puis reprend automatiquement, en priorité avec les notes en attente.
+
+Le redémarrage de l'app conserve l'attente. Les anciennes erreurs 429 sont remises en file automatiquement. Une note analysée avec succès n'est pas réanalysée pour cette reprise. Les interruptions réseau et erreurs serveur temporaires sont également mises en attente ; une erreur **400** reste distincte d'un quota et n'entraîne aucune boucle de tentatives automatiques.
+
+Les limites sont partagées avec les autres usages du compte OpenRouter : l'espacement réduit les rafales, sans garantir qu'aucune 429 ne surviendra. Voir les [limites OpenRouter](https://openrouter.ai/docs/api_reference/limits).
+
 ## Confidentialité et secrets
 
 L'application et le journal tournent sur ton Mac. L'analyse IA utilise les serveurs OpenRouter : le texte des notes analysées, le dépôt choisi et ses labels leur sont transmis. Ce n'est donc pas une IA hors ligne. Le routage demande des fournisseurs n'autorisant pas la collecte des données (`data_collection: deny`) ; les politiques de ton compte OpenRouter et du fournisseur restent applicables.
@@ -115,7 +125,7 @@ L'intention de publication est enregistrée sur disque **avant** l'envoi. Si la 
 
 Un verrou empêche deux instances sur le même Mac de publier en parallèle. Ce mécanisme ne coordonne pas plusieurs Macs : utilise une seule installation active pour un même compte Notes. Ne supprime pas le journal pour résoudre une erreur ; conserve une copie avant toute réparation.
 
-Les erreurs sur une note sont visibles et peuvent être relancées manuellement. Une erreur ne supprime pas les traitements déjà enregistrés. Un journal corrompu bloque la publication.
+Les erreurs permanentes sur une note sont visibles et peuvent être relancées manuellement. Les limitations de quota et pannes temporaires restent en attente d'une reprise automatique. Une erreur ne supprime pas les traitements déjà enregistrés. Un journal corrompu bloque la publication.
 
 ## Développement
 

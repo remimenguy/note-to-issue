@@ -11,9 +11,14 @@ public actor Processor {
         self.journal = journal; self.analyzer = analyzer; self.github = github
         var entries = try journal.load()
         var recovered = false
-        for (id, var entry) in entries where entry.status == .publishing {
-            entry.status = .uncertain
-            entry.message = "L'app s'est arrêtée pendant la publication. Vérifie GitHub avant toute nouvelle tentative."
+        for (id, var entry) in entries {
+            if entry.status == .publishing {
+                entry.status = .uncertain
+                entry.message = "L'app s'est arrêtée pendant la publication. Vérifie GitHub avant toute nouvelle tentative."
+            } else if entry.status == .failed, entry.message.hasPrefix("OpenRouter HTTP 429.") {
+                entry.status = .waiting; entry.retryAt = .distantPast
+                entry.message = "Ancienne limite OpenRouter : note remise en attente pour reprise automatique."
+            } else { continue }
             entries[id] = entry; recovered = true
         }
         if recovered { try journal.save(entries) }
@@ -21,9 +26,35 @@ public actor Processor {
     }
 
     public var known: [String: Double] {
-        // -1 tells Notes to skip this identifier regardless of later edits.
-        // Re-analysis is an explicit user action, never another background AI call.
-        entries.mapValues { _ in -1 }
+        knownNotes(at: Date())
+    }
+    public func knownNotes(at now: Date, model: String? = nil) -> [String: Double] {
+        entries.compactMapValues { entry in
+            if entry.status == .waiting {
+                if (entry.retryAt ?? .distantPast) <= now { return nil }
+                if let model, let retryModel = entry.retryModel, model != retryModel { return nil }
+            }
+            return -1
+        }
+    }
+    public func nextRetryAt(for model: String, now: Date = Date()) -> Date? {
+        entries.values.filter { $0.status == .waiting && ($0.retryModel == nil || $0.retryModel == model) }
+            .compactMap(\.retryAt).filter { $0 > now }.max()
+    }
+    public func retryIDs(for model: String, now: Date = Date()) -> [String] {
+        entries.values.filter { entry in
+            entry.status == .waiting && ((entry.retryAt ?? .distantPast) <= now || (entry.retryModel != nil && entry.retryModel != model))
+        }.sorted { ($0.retryAt ?? .distantPast) < ($1.retryAt ?? .distantPast) }.map(\.id)
+    }
+    public func rescheduleWaiting() throws {
+        var next = entries
+        for (id, var entry) in next where entry.status == .waiting {
+            entry.retryAt = .distantPast
+            entry.message = "Connexion OpenRouter actualisée. Vérification du quota au prochain passage."
+            next[id] = entry
+        }
+        try journal.save(next)
+        entries = next
     }
 
     private func begin() throws {
@@ -44,7 +75,9 @@ public actor Processor {
         guard note.modifiedAt.isFinite, now.timeIntervalSince1970 - note.modifiedAt >= 30 else { return nil }
         if let existing = entries[note.id] {
             if [.published, .publishing, .uncertain].contains(existing.status) { return existing }
-            if !force && existing.note.fingerprint == note.fingerprint {
+            if existing.status == .waiting, (existing.retryAt ?? .distantPast) > now,
+               existing.retryModel == nil || existing.retryModel == settings.model { return existing }
+            if !force && existing.status != .waiting && existing.note.fingerprint == note.fingerprint {
                 if existing.note != note {
                     var updated = existing
                     updated.note = note
@@ -68,6 +101,10 @@ public actor Processor {
                 entry.status = draft.isIssue ? .review : .ignored
                 entry.message = draft.reason
             }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let deferred as AnalysisDeferred {
+            entry.status = .waiting; entry.retryAt = deferred.retryAt; entry.retryModel = settings.model; entry.message = deferred.message
         } catch {
             entry.status = .failed
             entry.message = Self.safeMessage(error)

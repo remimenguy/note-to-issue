@@ -3,9 +3,12 @@ import XCTest
 
 final class AnalysisStub: Analyzing {
     var calls = 0
+    var failure: Error?
     var result = Draft(isIssue: true, confidence: 0.98, reason: "Action concrète", title: "Corriger le bouton", body: "Le bouton plante.", labels: ["bug"])
     func analyze(note: Note, repository: String, labels: [String], settings: Settings, key: String) async throws -> Draft {
-        calls += 1; return result
+        calls += 1
+        if let failure { throw failure }
+        return result
     }
 }
 final class GitHubStub: GitHubServing {
@@ -138,5 +141,64 @@ final class ProcessorTests: XCTestCase {
         _ = try await processor.process(note: note, settings: settings, key: "test", now: Date(timeIntervalSince1970: 200))
         let known = await processor.known
         XCTAssertEqual(known, ["one": -1])
+    }
+
+    func testDeferredAnalysisIsPersistedAndRetriedOnlyAfterDeadline() async throws {
+        analyzer.failure = AnalysisDeferred(retryAt: Date(timeIntervalSince1970: 500), message: "Quota atteint.")
+        let waiting = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 200))
+        XCTAssertEqual(waiting?.status, .waiting)
+        XCTAssertEqual(try journal.load()["one"]?.retryAt?.timeIntervalSince1970, 500)
+        let early = await processor.knownNotes(at: Date(timeIntervalSince1970: 499))
+        let ready = await processor.knownNotes(at: Date(timeIntervalSince1970: 500))
+        XCTAssertEqual(early["one"], -1)
+        XCTAssertNil(ready["one"])
+        _ = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 499), force: true)
+        XCTAssertEqual(analyzer.calls, 1)
+        analyzer.failure = nil
+        let published = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 501))
+        XCTAssertEqual(published?.status, .published)
+        XCTAssertEqual(analyzer.calls, 2)
+        XCTAssertEqual(github.created.count, 1)
+    }
+
+    func testLegacy429FailuresBecomePendingWithoutResettingSuccessfulNotes() async throws {
+        let old = Entry(note: note, repository: "kroco-edu/app", status: .failed, message: "OpenRouter HTTP 429. Vérifie la clé, le crédit et la compatibilité JSON Schema du modèle.")
+        let other = Note(id: "done", title: "Done", text: "text", modifiedAt: 100)
+        try journal.save(["one": old, "done": Entry(note: other, repository: "kroco-edu/app", status: .published)])
+        let restarted = try Processor(journal: journal, analyzer: analyzer, github: github)
+        let entries = await restarted.entries
+        XCTAssertEqual(entries["one"]?.status, .waiting)
+        XCTAssertEqual(entries["done"]?.status, .published)
+        XCTAssertEqual(try journal.load()["one"]?.status, .waiting)
+    }
+    func testExplicitModelChangeReleasesOnlyUnfinishedNotes() async throws {
+        analyzer.failure = AnalysisDeferred(retryAt: Date(timeIntervalSince1970: 500), message: "Quota gratuit.")
+        _ = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 200))
+        var paid = Settings(); paid.model = "openai/gpt-4.1-mini"
+        let known = await processor.knownNotes(at: Date(timeIntervalSince1970: 300), model: paid.model)
+        XCTAssertNil(known["one"])
+        analyzer.failure = nil
+        let entry = try await processor.process(note: note, settings: paid, key: "test", now: Date(timeIntervalSince1970: 300))
+        XCTAssertEqual(entry?.status, .published)
+        XCTAssertEqual(github.created.count, 1)
+    }
+    func testCancellationDoesNotMarkANewNoteAsProcessed() async throws {
+        analyzer.failure = CancellationError()
+        do {
+            _ = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 200))
+            XCTFail("Cancellation swallowed")
+        } catch is CancellationError {}
+        XCTAssertTrue(try journal.load().isEmpty)
+        XCTAssertTrue(github.created.isEmpty)
+    }
+    func testReconnectionReschedulesOnlyUnfinishedWork() async throws {
+        analyzer.failure = AnalysisDeferred(retryAt: Date(timeIntervalSince1970: 500), message: "Quota.")
+        _ = try await processor.process(note: note, settings: Settings(), key: "test", now: Date(timeIntervalSince1970: 200))
+        try await processor.rescheduleWaiting()
+        let known = await processor.knownNotes(at: Date(timeIntervalSince1970: 300))
+        XCTAssertNil(known["one"])
+        XCTAssertEqual(try journal.load()["one"]?.status, .waiting)
+        XCTAssertEqual(analyzer.calls, 1)
+        XCTAssertTrue(github.created.isEmpty)
     }
 }

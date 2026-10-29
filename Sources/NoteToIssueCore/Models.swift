@@ -77,7 +77,7 @@ public struct Settings: Codable, Equatable, Sendable {
 }
 
 public enum EntryStatus: String, Codable, Sendable {
-    case ignored, review, published, publishing, uncertain, failed
+    case ignored, review, published, publishing, uncertain, failed, waiting
     public var label: String {
         switch self {
         case .ignored: return "Ignorée"
@@ -86,6 +86,7 @@ public enum EntryStatus: String, Codable, Sendable {
         case .publishing: return "Publication en cours"
         case .uncertain: return "Publication à vérifier"
         case .failed: return "Erreur"
+        case .waiting: return "En attente"
         }
     }
 }
@@ -98,10 +99,14 @@ public struct Entry: Codable, Equatable, Identifiable, Sendable {
     public var issueURL: URL?
     public var message: String
     public var updatedAt: Date
+    public var retryAt: Date?
+    public var retryModel: String?
     public var id: String { note.id }
     public init(note: Note, repository: String, status: EntryStatus, draft: Draft? = nil,
-                issueURL: URL? = nil, message: String = "", updatedAt: Date = Date()) {
+                issueURL: URL? = nil, message: String = "", updatedAt: Date = Date(), retryAt: Date? = nil, retryModel: String? = nil) {
         self.note = note; self.repository = repository; self.status = status
         self.draft = draft; self.issueURL = issueURL; self.message = message; self.updatedAt = updatedAt
+        self.retryAt = retryAt
+        self.retryModel = retryModel
     }
 }

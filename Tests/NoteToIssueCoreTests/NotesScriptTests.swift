@@ -54,4 +54,22 @@ final class NotesScriptTests: XCTestCase {
         let notes = try JSONDecoder().decode([Note].self, from: data)
         XCTAssertEqual(notes.map(\.id), ["active"])
     }
+    func testQueuedRetryIsPrioritizedBeforeNewerNotes() async throws {
+        let fixture = """
+        var notes = {
+            id:function(){return ["new", "queued"];},
+            modificationDate:function(){return [new Date(2000), new Date(1000)];},
+            byId:function(id){return {
+                passwordProtected:function(){return false;},
+                container:function(){return {name:function(){return "Notes";}};},
+                plaintext:function(){return "text";},name:function(){return "Title";},
+                modificationDate:function(){return new Date(id === "new" ? 2000 : 1000);}
+            };}
+        };
+        var account = {name:function(){return "iCloud";},notes:notes};
+        function Application(){return {accounts:{whose:function(){return function(){return [account];};}}};}
+        """
+        let data = try await evaluate(fixture: fixture, config: #"{"account":"iCloud","folder":"","known":{},"limit":1,"priorityIDs":["queued"]}"#)
+        XCTAssertEqual(try JSONDecoder().decode([Note].self, from: data).map(\.id), ["queued"])
+    }
 }

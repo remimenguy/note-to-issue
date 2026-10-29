@@ -68,6 +68,7 @@ struct ContentView: View {
                     Text("Publiées").tag(EntryStatus?.some(.published))
                     Text("À vérifier").tag(EntryStatus?.some(.review))
                     Text("Erreurs").tag(EntryStatus?.some(.failed))
+                    Text("En attente").tag(EntryStatus?.some(.waiting))
                 }.frame(width: 135)
                 Button { Task { await model.scan() } } label: { Label("Analyser", systemImage: "arrow.clockwise") }
                     .disabled(model.busy || !model.keyConfigured || model.demo)
@@ -93,7 +94,7 @@ struct StatusBadge: View {
         switch status {
         case .published: return .green
         case .review: return .blue
-        case .failed, .uncertain: return .orange
+        case .failed, .uncertain, .waiting: return .orange
         default: return .secondary
         }
     }

@@ -31,6 +31,15 @@ struct EntryDetailView: View {
                         .font(.callout).foregroundStyle(.secondary).padding(14).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12))
                 }
+                if entry.status == .waiting {
+                    if let retryAt = entry.retryAt, retryAt > Date() {
+                        Label("Reprise automatique le \(retryAt.formatted(date: .abbreviated, time: .shortened))", systemImage: "clock")
+                            .font(.callout).foregroundStyle(.secondary)
+                    } else {
+                        Text("Cette note sera reprise au prochain passage, sans intervention.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                }
                 HStack {
                     if let url = entry.issueURL { Link("Ouvrir l'issue GitHub ↗", destination: url).buttonStyle(.borderedProminent) }
                     if entry.status == .review {

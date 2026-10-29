@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
     @Published var loginMessage = ""
     @Published var connecting = false
     @Published var lastScan: Date?
+    @Published var resumeAt: Date?
     @Published var selection: String?
     @Published var filter: EntryStatus?
     let demo: Bool
@@ -91,15 +92,29 @@ final class AppModel: ObservableObject {
             let code = try await server.waitForCode()
             let newKey = try await OpenRouterOAuth().exchange(code: code, verifier: pkce.verifier)
             try Task.checkCancellation()
+            let accountChanged = key != newKey
+            if accountChanged {
+                let previousLoop = loop
+                previousLoop?.cancel(); loop = nil; monitoring = false
+                await previousLoop?.value
+                try Task.checkCancellation()
+                try await processor?.rescheduleWaiting()
+            }
+            try Task.checkCancellation()
             try Keychain.save(newKey)
-            key = newKey; keyConfigured = true
+            key = newKey; keyConfigured = true; connecting = false
             message = "OpenRouter est connecté."
+            await refresh()
             if settings.monitoringEnabled { start() }
         } catch is CancellationError {
             message = "Connexion OpenRouter annulée."
+            if settings.monitoringEnabled && keyConfigured { start() }
         } catch { self.error = error.localizedDescription }
     }
-    func cancelConnection() { oauthTask?.cancel(); oauthServer?.cancel() }
+    func cancelConnection() {
+        guard connecting else { return }
+        oauthTask?.cancel(); oauthServer?.cancel()
+    }
 
     func checkNotes() async {
         guard !busy, !demo else { return }
@@ -137,7 +152,8 @@ final class AppModel: ObservableObject {
             while !Task.isCancelled {
                 guard let self else { return }
                 await self.scan()
-                do { try await Task.sleep(for: .seconds(self.settings.interval)) }
+                let delay = AnalysisScheduling.nextScanDelay(interval: self.settings.interval, retryAt: self.resumeAt, now: Date(), isBusy: self.busy)
+                do { try await Task.sleep(for: .seconds(delay)) }
                 catch { return }
             }
         }
@@ -156,17 +172,31 @@ final class AppModel: ObservableObject {
         defer { busy = false }
         let snapshot = settings
         do {
-            let batch = try await notes.read(settings: snapshot, known: processor.known)
+            resumeAt = await processor.nextRetryAt(for: snapshot.model)
+            if let resumeAt {
+                message = "OpenRouter en attente · reprise le \(resumeAt.formatted(date: .abbreviated, time: .shortened))."
+                return
+            }
+            let batch = try await notes.read(settings: snapshot, known: processor.knownNotes(at: Date(), model: snapshot.model), priorityIDs: processor.retryIDs(for: snapshot.model))
             var count = 0
+            var deferred = false
             for note in batch {
                 if Task.isCancelled { break }
                 message = "Analyse \(count + 1)/\(batch.count) : \(note.title)"
-                _ = try await processor.process(note: note, settings: snapshot, key: key)
+                let entry = try await processor.process(note: note, settings: snapshot, key: key)
                 count += 1
                 await refresh()
+                if entry?.status == .waiting {
+                    deferred = true
+                    resumeAt = max(resumeAt ?? .distantPast, entry?.retryAt ?? .distantPast)
+                    message = "OpenRouter en attente · reprise le \((entry?.retryAt ?? Date()).formatted(date: .abbreviated, time: .shortened))."
+                    break
+                }
             }
             lastScan = Date()
-            message = count == 0 ? "À jour · aucune nouvelle note à analyser." : "\(count) note(s) traitée(s)."
+            if !deferred { message = count == 0 ? "À jour · aucune nouvelle note à analyser." : "\(count) note(s) traitée(s)." }
+        } catch is CancellationError {
+            // Pausing also cancels a pending pacing sleep without marking the note failed.
         } catch {
             self.error = error.localizedDescription
             message = "Analyse interrompue. Le journal est conservé."
@@ -196,6 +226,7 @@ final class AppModel: ObservableObject {
     private func refresh() async {
         guard let processor else { return }
         entries = await processor.entries.values.sorted { $0.updatedAt > $1.updatedAt }
+        resumeAt = await processor.nextRetryAt(for: settings.model)
         if selection == nil { selection = entries.first?.id }
     }
 

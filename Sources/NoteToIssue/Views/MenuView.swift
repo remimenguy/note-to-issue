@@ -7,6 +7,9 @@ struct MenuView: View {
     var body: some View {
         Text(model.monitoring ? "Surveillance active" : "Surveillance en pause")
         Text("\(model.publishedCount) issue(s) publiée(s)")
+        if let resumeAt = model.resumeAt {
+            Text("Reprise : \(resumeAt.formatted(date: .abbreviated, time: .shortened))")
+        }
         Divider()
         Button("Ouvrir Note to Issue") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
         Button("Analyser maintenant") { Task { await model.scan() } }.disabled(model.busy || !model.keyConfigured)

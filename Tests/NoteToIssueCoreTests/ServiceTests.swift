@@ -8,6 +8,9 @@ final class HTTPStub: HTTPTransport {
     init(_ response: Data) { self.response = response }
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         requests.append(request)
+        if request.url?.path == "/api/v1/key" {
+            return (Data(#"{"data":{"free_model_daily_requests":{"remaining":50}}}"#.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
         return (response, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
     }
 }
@@ -34,7 +37,7 @@ final class ServiceTests: XCTestCase {
         let transport = HTTPStub(try envelope(content: draftJSON))
         let draft = try await OpenRouterClient(transport: transport).analyze(note: note, repository: "kroco-edu/app", labels: ["bug"], settings: Settings(), key: "test-key")
         XCTAssertEqual(draft.title, "Corriger la connexion")
-        let request = try XCTUnwrap(transport.requests.first)
+        let request = try XCTUnwrap(transport.requests.first(where: { $0.httpMethod == "POST" }))
         XCTAssertEqual(request.url?.absoluteString, "https://openrouter.ai/api/v1/chat/completions")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
