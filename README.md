@@ -48,7 +48,7 @@ Le script construit et installe `~/Applications/NoteToIssue.app`, puis l'ouvre. 
 
 1. Ouvre **Réglages → OpenRouter → Connecter OpenRouter**.
 2. Autorise la connexion dans ton navigateur. L'app utilise OAuth PKCE S256 : aucun secret client à configurer, aucune clé à copier. Le retour local se ferme après la connexion ou au bout de 3 minutes.
-3. Vérifie le compte Notes (`iCloud` par défaut) et, éventuellement, limite la surveillance à un dossier.
+3. Vérifie le compte Notes (`iCloud` par défaut) et, éventuellement, limite la surveillance à un dossier. Un compte renommé commençant par « iCloud » est reconnu automatiquement s'il est unique ; sinon, saisis son nom exact dans Apple Notes.
 4. Clique **Vérifier l'accès à Notes** et autorise l'automatisation macOS.
 5. Enregistre les réglages. La surveillance démarre automatiquement quand OpenRouter est connecté.
 
@@ -143,7 +143,7 @@ Le bundle est signé localement avec une signature ad hoc, sans notarisation de 
 
 ## Limites actuelles
 
-- Texte des notes seulement : pas d'OCR, de lecture de pièces jointes ou de notes verrouillées.
+- Texte des notes seulement : pas d'OCR, de lecture de pièces jointes ou de notes verrouillées. Le dossier **Supprimées récemment / Recently Deleted** est toujours exclu, avant la lecture du texte.
 - Notes déjà synchronisées dans Apple Notes sur le Mac ; l'app n'interroge pas directement les serveurs iCloud.
 - Maximum 24 000 caractères par note ; les textes plus longs sont signalés sans envoi à l'IA.
 - Le filtre de dossier utilise un nom exact et unique parmi les dossiers du compte.

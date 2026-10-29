@@ -37,3 +37,5 @@
 - Fonctionnement continu via menu de barre des menus, même fenêtre fermée. Installation du bundle dans `~/Applications` pour ne pas dépendre du montage du disque externe.
 - Démarrage à l'ouverture de session via `SMAppService.mainApp`. Activation macOS signalée si approbation système requise. Surveillance reprise automatiquement lorsque la clé est configurée ; pause persistante.
 - En veille/arrêt aucune activité, reprise au réveil/ouverture de session. Aucun maintien artificiel du Mac éveillé.
+- Modèle OpenRouter par défaut : `openrouter/free` (demande utilisateur).
+- Les notes de Recently Deleted / Supprimées récemment sont exclues avant lecture du texte, même avec un filtre de dossier explicite. Compte iCloud renommé : résolution uniquement si un unique compte au nom commençant par iCloud est trouvé.
